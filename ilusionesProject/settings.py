@@ -25,7 +25,7 @@ SECRET_KEY = '^=7ev(219)6j3*+zaz6s=)bz0zho-v3#&@v06-*h-@r+4_0yw3'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['ilusiones-web.herokuapp.com']
 
 
 # Application definition
