@@ -1,0 +1,1 @@
+web: gunicorn ilusionesProject.wsgi --log-file -

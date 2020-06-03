@@ -8,3 +8,9 @@ class Almacen(models.Model):
 
     def __str__(self):
         return self.nombre
+
+class Producto(models.Model):
+    sku = models.CharField(primary_key=True, unique=True, max_length=50)
+
+    def __str__(self):
+        return self.sku
