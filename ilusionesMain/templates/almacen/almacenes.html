@@ -1,0 +1,38 @@
+{% extends 'layout.html' %}
+
+{% block title %}
+    {{title}}
+{% endblock %}
+
+{% block content %}
+
+    <h1 class="title">{{title}}</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class='message'>
+                {{message}}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% for almacen in almacenes %}
+        <article class='article-item'>
+
+            <div class='data'>
+                <h2>
+                    <a class='None' href="{% url 'actualizarAlmacen' almacen.subInventario %}" class='btn btn-delete'>{{almacen.nombre}}</a>
+                </h2>
+                <span class='date'>{{almacen.subInventario}}</span>
+                <p>
+                    {{almacen.pdv}}
+
+                    <a href="{% url 'borrarAlmacen' almacen.subInventario %}" class='btn btn-delete'>Borrar</a>
+                </p>
+            </div>
+
+            <div class='clearfix'></div>
+        </article>
+    {% endfor %}
+
+{% endblock %}

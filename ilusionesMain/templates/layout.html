@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8"/>
+    <title>
+        {% block title %}
+            
+        {% endblock %}
+        | Oscar Arias
+    </title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
+</head>
+
+<body>
+    <header>
+        <div id="logotipo">
+            <img src="https://4.bp.blogspot.com/_fRrhtTfYTbU/TOpw4EyneII/AAAAAAAAACk/jlluv26l8YY/s1600/1000px-Labyrinth_1_%28from_Nordisk_familjebok%29.svg.png"/>
+            <h1>Ilusiones S.A de C.V.</h1>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li>
+                <a href="{% url 'index'%}">Inicio</a>
+            </li>
+            <li>
+                <a href="{% url 'almacenes'%}">Almacenes</a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="barra">
+        <span class="esquina-izquierda"></span>
+        <span class="relleno-barra"></span>
+        <span class="esquina-derecha"></span>
+    </div>
+
+    <div id="content">
+
+        <div class="box">
+            {% block content %}
+            {% endblock %}
+        </div>
+        
+    </div>
+
+    <footer>
+        Ilusiones &copy; Oscar Arias WEB - {% now "d/m/Y" %}
+    </footer>
+</body>
+
+</html>
