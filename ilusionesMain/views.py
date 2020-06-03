@@ -11,7 +11,9 @@ def index(request):
         })
 
 def getAlmacenes(request):
-    resp = requests.get('http://127.0.0.1:8000/api/posts/')
+    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/posts/'
+
+    resp = requests.get(ruta)
 
     almacenes = []
 
@@ -30,7 +32,8 @@ def getAlmacenes(request):
     })
 
 def deleteAlmacen(request, subInventario):
-    resp = requests.delete('http://127.0.0.1:8000/api/posts/'+subInventario)
+    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/posts/' + subInventario + '/'
+    resp = requests.delete(ruta)
 
     if resp.status_code != 200 and resp.status_code != 204:
          messages.success(request, f'No se ha podido borrar el registro')
@@ -40,7 +43,8 @@ def deleteAlmacen(request, subInventario):
     return redirect('almacenes')
 
 def getAlmacen(request, subInventario):
-    resp = requests.get('http://127.0.0.1:8000/api/posts/'+subInventario)
+    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/posts/' + subInventario + '/'
+    resp = requests.get(ruta)
 
     if resp.status_code != 200:
             messages.success(request, f'No se ha podido encontrar la información')
@@ -58,7 +62,7 @@ def getAlmacen(request, subInventario):
             pdv = data_form['pdv']
             nombre = data_form['nombre']
 
-            resp = requests.put('http://127.0.0.1:8000/api/posts/'+subInventario+'/', json={'subInventario':subInventario,'pdv':pdv,'nombre':nombre})
+            resp = requests.put(ruta, json={'subInventario':subInventario,'pdv':pdv,'nombre':nombre})
 
             if resp.status_code != 200:
                 messages.success(request, f'No se ha podido actualizar el Almacen {subInventario}')
@@ -83,16 +87,6 @@ def getAlmacen(request, subInventario):
         'button': 'Actualizar'
     })
 
-def deleteAlmacen(request, subInventario):
-    resp = requests.delete('http://127.0.0.1:8000/api/posts/'+subInventario)
-
-    if resp.status_code != 200 and resp.status_code != 204:
-         messages.success(request, f'No se ha podido borrar el registro')
-    else:
-        messages.success(request, f'Se borro correctamente el almacen')
-    
-    return redirect('almacenes')
-
 def saveAlmacen(request):
     if request.method == 'POST':
         formulario = FormAlmacen(request.POST)
@@ -104,7 +98,8 @@ def saveAlmacen(request):
             pdv = data_form['pdv']
             nombre = data_form['nombre']
 
-            resp = requests.post('http://127.0.0.1:8000/api/posts/', json={'subInventario':subInventario,'pdv':pdv,'nombre':nombre})
+            ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/posts/'
+            resp = requests.post(ruta, json={'subInventario':subInventario,'pdv':pdv,'nombre':nombre})
 
             if resp.status_code != 201:
                 messages.success(request, f'No se ha podido guardar el Almacen {subInventario}')
