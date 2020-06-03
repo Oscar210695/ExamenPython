@@ -7,19 +7,21 @@
 {% block content %}
     <h1 class='title'>{{title|safe}}</h1>
 
+    <!--
     {% if form.errors %}
         <strong class='rojo'>
             Hay errores en el formulario:
             {{form.errors}}
         </strong>
     {% endif %}
+    -->
     
-    <form action='' method='POST'>
+    <form action='' method='POST' autocomplete='off'>
         {% csrf_token %}
         
         {{form}}
 
-        <input type='submit' value='Guardar'/>
+        <input type='submit' value='{{button}}'/>
 
     </form>
 

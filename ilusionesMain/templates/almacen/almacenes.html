@@ -16,12 +16,14 @@
         {% endfor %}
     {% endif %}
 
+    <a class='new' href="{% url 'crearAlmacen' %}" class='btn btn-delete'>Crear nuevo</a>
+
     {% for almacen in almacenes %}
         <article class='article-item'>
 
             <div class='data'>
                 <h2>
-                    <a class='None' href="{% url 'actualizarAlmacen' almacen.subInventario %}" class='btn btn-delete'>{{almacen.nombre}}</a>
+                    <a class='edit' href="{% url 'actualizarAlmacen' almacen.subInventario %}" class='btn btn-delete'>{{almacen.nombre}}</a>
                 </h2>
                 <span class='date'>{{almacen.subInventario}}</span>
                 <p>

@@ -1,7 +1,8 @@
 from django.shortcuts import render, HttpResponse, redirect
 import requests
 from django.contrib import messages
-from ilusionesMain.forms import FormAlmacen
+from ilusionesMain.forms import FormAlmacen, EditFormAlmacen
+from ilusionesAPI.models import Almacen
 
 # Create your views here.
 def index(request):
@@ -39,41 +40,86 @@ def deleteAlmacen(request, subInventario):
     return redirect('almacenes')
 
 def getAlmacen(request, subInventario):
+    resp = requests.get('http://127.0.0.1:8000/api/posts/'+subInventario)
+
+    if resp.status_code != 200:
+            messages.success(request, f'No se ha podido encontrar la información')
+            return redirect('almacenes')
 
     if request.method == 'POST':
-        formulario = FormAlmacen(request.POST)
+        almacen = Almacen(pdv=resp.json()['pdv'],nombre=resp.json()['nombre'])
+
+        formulario = EditFormAlmacen(request.POST, instance=almacen)
 
         if formulario.is_valid():
             data_form = formulario.cleaned_data
 
-            subInventario = data_form['subInventario']
+            subInventario = subInventario
             pdv = data_form['pdv']
             nombre = data_form['nombre']
+
+            resp = requests.put('http://127.0.0.1:8000/api/posts/'+subInventario+'/', json={'subInventario':subInventario,'pdv':pdv,'nombre':nombre})
+
+            if resp.status_code != 200:
+                messages.success(request, f'No se ha podido actualizar el Almacen {subInventario}')
+                return redirect('almacenes')
 
             #mensaje Flask
             messages.success(request, f'Se ha actualizado correctamente el inventario {subInventario}')
 
             return redirect('almacenes')
     else:
-        resp = requests.get('http://127.0.0.1:8000/api/posts/'+subInventario)
-
-        if resp.status_code != 200:
-            messages.success(request, f'No se ha podido encontrar la información')
-            return redirect('almacenes')
-
-        almacen = Almacen(
-            subInventario= resp.json()['subInventario'],
-            pdv= resp.json()['pdv'],
-            nombre= resp.json()['nombre']
+        formulario = FormAlmacen(
+            initial={'subInventario':resp.json()['subInventario'], 
+                    'pdv':resp.json()['pdv'],
+                    'nombre':resp.json()['nombre']}
         )
-        
-        formulario = FormAlmacen(instance=almacen)
 
-        #formulario['subInventario'] = almacenes[0]['subInventario']
+        formulario.fields['subInventario'].widget.attrs['readonly'] = True
 
     return render(request, 'almacen/alterAlmacen.html', {
-        'title': f'Actualizar almacen <i>{almacen["subInventario"]}</i>',
-        'form': formulario
+        'title': f'Actualizar almacen <i>{subInventario}</i>',
+        'form': formulario,
+        'button': 'Actualizar'
     })
 
+def deleteAlmacen(request, subInventario):
+    resp = requests.delete('http://127.0.0.1:8000/api/posts/'+subInventario)
+
+    if resp.status_code != 200 and resp.status_code != 204:
+         messages.success(request, f'No se ha podido borrar el registro')
+    else:
+        messages.success(request, f'Se borro correctamente el almacen')
+    
+    return redirect('almacenes')
+
+def saveAlmacen(request):
+    if request.method == 'POST':
+        formulario = FormAlmacen(request.POST)
+
+        if formulario.is_valid():
+            data_form = formulario.cleaned_data
+
+            subInventario = data_form.get('subInventario')
+            pdv = data_form['pdv']
+            nombre = data_form['nombre']
+
+            resp = requests.post('http://127.0.0.1:8000/api/posts/', json={'subInventario':subInventario,'pdv':pdv,'nombre':nombre})
+
+            if resp.status_code != 201:
+                messages.success(request, f'No se ha podido guardar el Almacen {subInventario}')
+                return redirect('almacenes')
+
+            #mensaje Flask
+            messages.success(request, f'Se ha guardado correctamente el inventario {subInventario}')
+
+            return redirect('almacenes')
+    else:
+        formulario = FormAlmacen()
+
+    return render(request, 'almacen/alterAlmacen.html', {
+        'title': f'Crear Almacen',
+        'form': formulario,
+        'button': 'Guardar'
+    })
 
