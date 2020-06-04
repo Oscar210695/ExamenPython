@@ -9,4 +9,5 @@ urlpatterns = [
     path('actualizarAlmacen/<str:subInventario>', views.getAlmacen, name='actualizarAlmacen'),
     path('crearAlmacen/', views.saveAlmacen, name='crearAlmacen'),
     path('subirOrden/', views.loadCompras, name='subirOrden'),
+    path('ordenes/', views.getOrdenes, name='ordenes'),
 ]

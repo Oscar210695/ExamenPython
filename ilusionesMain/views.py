@@ -1,7 +1,7 @@
 from django.shortcuts import render, HttpResponse, redirect
 import requests
 from django.contrib import messages
-from ilusionesMain.forms import FormAlmacen, EditFormAlmacen
+from ilusionesMain.forms import FormAlmacen, EditFormAlmacen, FormOrden
 from ilusionesAPI.models import Almacen
 import pandas as pd
 
@@ -121,68 +121,115 @@ def saveAlmacen(request):
 
 def loadCompras(request):
     if request.method == 'POST':
-        df = pd.read_excel(request.FILES.get('xlsfile'), index_col=0)
-        df = df.sort_index()
-        df = df[:-1]
-        non_null_columns = [col for col in df.columns if df.loc[:, col].notna().any()]
-        df = df[non_null_columns]
+        formulario = FormOrden(request.POST, request.FILES)
+        
+        if formulario.is_valid():
+            data_form = formulario.cleaned_data
 
-        if df.index.name == 'Sub inventario' and df.columns[0] == 'PDV' and df.columns[-1] == 'TOTAL':
-            df = df.loc[df['TOTAL'] > 0]
-            df = df.drop(columns="TOTAL")
+            orden = data_form.get('clave')
 
-            repetidos = df.index.get_level_values('Sub inventario').get_duplicates()
+            df = pd.read_excel(request.FILES.get('Archivo'), index_col=0)
+            df = df.sort_index()
+            df = df[:-1]
+            non_null_columns = [col for col in df.columns if df.loc[:, col].notna().any()]
+            df = df[non_null_columns]
 
-            if len(repetidos) > 0:
-                messages.success(request, f'El archivo contiene inventarios duplicados')
+            if df.index.name == 'Sub inventario' and df.columns[0] == 'PDV' and df.columns[-1] == 'TOTAL':
+                df = df.loc[df['TOTAL'] > 0]
+                df = df.drop(columns="TOTAL")
+
+                repetidos = df.index.get_level_values('Sub inventario').get_duplicates()
+
+                if len(repetidos) > 0:
+                    messages.success(request, f'El archivo contiene inventarios duplicados')
+                else:
+                    almacenes = list(df.index.values)
+                    for almacen in almacenes:
+                        ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/almacen/' + almacen + '/'
+                        resp = requests.get(ruta)
+
+                        if resp.status_code != 200:
+                                messages.success(request, f'No se encuentran todos los almacenes regitrados')
+                                return redirect('subirOrden')
+
+                    productos = list(df.columns[1:])
+                    
+                    for producto in productos:
+                        producto = producto.replace(".", "_")
+
+                        ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/prod/' + producto + '/'
+                        resp = requests.get(ruta)
+
+                        if resp.status_code != 200:
+                                ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/prod/'
+                                resp = requests.post(ruta, json={'sku':producto})
+
+                                if resp.status_code != 201:
+                                    messages.success(request, f'No se ha podido guardar el producto {producto}')
+                                    return redirect('subirOrden')
+
+                    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/ordenIn/'
+                    resp = requests.post(ruta, json={'clave':orden,'total':0})
+
+                    if resp.status_code != 201:
+                        messages.success(request, f'No se ha podido guardar la orden principal')
+                        return redirect('subirOrden')
+
+                    df = df.fillna(0).drop(columns="PDV")
+                    suma=0
+                    for i, j in df.iterrows(): 
+                        almacen = i
+                        for column in df.columns:
+                            producto = column.replace('.','_')
+                            cantidad = df[column][i]
+                            if cantidad > 0:
+                                estatus = 1
+                                suma += cantidad
+
+                                ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/orden/'
+                                resp = requests.post(ruta, json={'almacen':almacen,'producto':producto,'cantidad':cantidad, 'estatus': estatus, 'orden': orden})
+
+                                if resp.status_code != 201:
+                                    messages.success(request, f'No se ha podido guardar la orden')
+                                    return redirect('subirOrden')
+
+                    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/ordenIn/' + orden + '/'
+
+                    resp = requests.put(ruta, json={'clave':orden,'total':suma})
+
+                    if resp.status_code != 200:
+                        messages.success(request, f'No se ha podido actualizar la orden {orden}')
+                        return redirect('subirOrden')
+
+                    messages.success(request, f'Se agregraron correctamente las ordenes de compra')
+
             else:
-                almacenes = list(df.index.values)
-                for almacen in almacenes:
-                    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/almacen/' + almacen + '/'
-                    resp = requests.get(ruta)
-
-                    if resp.status_code != 200:
-                            messages.success(request, f'No se encuentran todos los almacenes regitrados')
-                            return redirect('subirOrden')
-
-                productos = list(df.columns[1:])
-                
-                for producto in productos:
-                    producto = producto.replace(".", "_")
-
-                    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/prod/' + producto + '/'
-                    resp = requests.get(ruta)
-
-                    if resp.status_code != 200:
-                            ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/prod/'
-                            resp = requests.post(ruta, json={'sku':producto})
-
-                            if resp.status_code != 201:
-                                messages.success(request, f'No se ha podido guardar el producto {producto}')
-                                return redirect('subirOrden')
-
-                df = df.fillna(0).drop(columns="PDV")
-                for i, j in df.iterrows(): 
-                    almacen = i
-                    for column in df.columns:
-                        producto = column.replace('.','_')
-                        cantidad = df[column][i]
-                        if cantidad > 0:
-                            estatus = 1
-
-                            ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/orden/'
-                            resp = requests.post(ruta, json={'almacen':almacen,'producto':producto,'cantidad':cantidad, 'estatus': estatus})
-
-                            if resp.status_code != 201:
-                                messages.success(request, f'No se ha podido guardar la orden')
-                                return redirect('subirOrden')
-
-                messages.success(request, f'Se agregraron correctamente las ordenes de compra')
-
-        else:
-            messages.success(request, f'El archivo no contiene el formato adecuado')
+                messages.success(request, f'El archivo no contiene el formato adecuado')
+    else:
+        formulario = FormOrden()
 
     return render(request, 'compras/loadCompras.html', {
         'title': f'Cargar Orden de Compra',
+        'form': formulario,
+    })
+
+def getOrdenes(request):
+    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/ordenIn/'
+
+    resp = requests.get(ruta)
+
+    ordenes = []
+
+    if resp.status_code != 200:
+        return HttpResponse(f"<h2>Se ha generado un error al consultar la API</h2")
+    for orden in resp.json():        
+        ordenes.append({
+            'clave': orden['clave'],
+            'total': orden['total']
+        })
+        
+    return render(request, 'compras/ordenes.html',{
+        'title': 'Ordenes generadas',
+        'ordenes': ordenes
     })
 

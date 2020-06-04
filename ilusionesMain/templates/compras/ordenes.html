@@ -16,20 +16,16 @@
         {% endfor %}
     {% endif %}
 
-    <a class='new' href="{% url 'crearAlmacen' %}">Crear nuevo</a>
-
-    {% for almacen in almacenes %}
+    {% for orden in ordenes %}
         <article class='article-item'>
 
             <div class='data'>
                 <h2>
-                    <a class='edit' href="{% url 'actualizarAlmacen' almacen.subInventario %}">{{almacen.nombre}}</a>
+                    {{orden.clave}}
                 </h2>
-                <span class='date'>{{almacen.subInventario}}</span>
+                <span class='date'>Se creo esta orden con {{orden.total}} productos</span>
                 <p>
-                    {{almacen.pdv}}
-
-                    <a href="{% url 'borrarAlmacen' almacen.subInventario %}" class='btn btn-delete'>Borrar</a>
+                    <a href="" class='new'>Recepción de mercancía</a>
                 </p>
             </div>
 

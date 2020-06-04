@@ -22,6 +22,7 @@ router = routers.DefaultRouter()
 router.register(r'almacen', views.getAlmacenes, 'ilusionesAPIAlmacen')  
 router.register(r'prod', views.getProductos, 'ilusionesAPIProd')  
 router.register(r'orden', views.getOrden, 'ilusionesAPIOrden')  
+router.register(r'ordenIn', views.getOrdenInd, 'ilusionesAPIOrdenInd')  
 
 urlpatterns = [
     path('admin/', admin.site.urls),

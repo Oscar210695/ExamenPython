@@ -1,7 +1,8 @@
 from django import forms
 from django.forms import ModelForm
 from django.core import validators
-from ilusionesAPI.models import Almacen
+from django.core.validators import FileExtensionValidator
+from ilusionesAPI.models import Almacen, Orden
 
 class FormAlmacen(ModelForm):
     subInventario = forms.CharField(
@@ -47,5 +48,19 @@ class EditFormAlmacen(ModelForm):
             'nombre': {
                 'required': "El campo Nombre es obligatorio",
             },
+        }
+
+class FormOrden(ModelForm):
+    clave = forms.CharField(
+        max_length=20,
+        validators=[validators.RegexValidator('^[a-zA-Z0-9]*$', 'La clave solo debe tener número y/o letras')]
+    )
+    Archivo = forms.FileField(validators=[FileExtensionValidator(allowed_extensions=['xls', 'xlsx'], message='Deben ser archivos de tipo excel')])
+
+    class Meta:
+        model = Orden
+        fields = ['clave']
+        labels = {
+            "clave": "Clave"
         }
 
