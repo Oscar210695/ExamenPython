@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Almacen, Producto, ordenCompra, Orden
+from .models import Almacen, Producto, ordenCompra, Orden, Inventario, Recepcion
       
 class serializerClass(serializers.ModelSerializer):
   class Meta:
@@ -19,4 +19,14 @@ class serializerClassOrden(serializers.ModelSerializer):
 class serializerClassOrdenIn(serializers.ModelSerializer):
   class Meta:
     model = Orden
-    fields = ('clave', 'total')
+    fields = ('clave', 'total', 'entregada')
+
+class serializerClassInventario(serializers.ModelSerializer):
+  class Meta:
+    model = Inventario
+    fields = ('imei', 'producto', 'folio')
+
+class serializerClassRecep(serializers.ModelSerializer):
+  class Meta:
+    model = Recepcion
+    fields = ('almacen', 'nombre', 'folio', 'orden')

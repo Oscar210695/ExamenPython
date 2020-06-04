@@ -25,7 +25,17 @@
                 </h2>
                 <span class='date'>Se creo esta orden con {{orden.total}} productos</span>
                 <p>
-                    <a href="" class='new'>Recepción de mercancía</a>
+                    {% if  orden.entregada%}
+                        Ya se ha cargado la recepción de mercancia
+                    {% else %}
+                        <form action="{% url 'subirRec' orden.clave %}"  method="post" enctype="multipart/form-data" autocomplete='off'>  
+                            {% csrf_token %}  
+
+                            {{form}}
+                            <span class='date'>Este proceso puede demorar unos minutos</span>
+                            <button type="submit">Cargar</button>
+                        </form>
+                    {% endif %}
                 </p>
             </div>
 

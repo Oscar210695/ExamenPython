@@ -53,7 +53,7 @@ class EditFormAlmacen(ModelForm):
 class FormOrden(ModelForm):
     clave = forms.CharField(
         max_length=20,
-        validators=[validators.RegexValidator('^[a-zA-Z0-9]*$', 'La clave solo debe tener número y/o letras')]
+        validators=[validators.RegexValidator('^[a-zA-Z0-9]*$', 'La clave solo debe contener números y/o letras')]
     )
     Archivo = forms.FileField(validators=[FileExtensionValidator(allowed_extensions=['xls', 'xlsx'], message='Deben ser archivos de tipo excel')])
 
@@ -63,4 +63,20 @@ class FormOrden(ModelForm):
         labels = {
             "clave": "Clave"
         }
+
+        error_messages = {
+            'clave': {
+                'required': "El campo Clave es obligatorio",
+            },
+            'Archivo': {
+                'required': "El campo Archivo es obligatorio",
+            },
+        }
+
+class FormRec(forms.Form):
+    Archivo_Recepcion = forms.FileField(
+        label='Recepción',
+        validators=[FileExtensionValidator(allowed_extensions=['xls', 'xlsx'], message='Deben ser archivos de tipo excel')],
+        )
+
 

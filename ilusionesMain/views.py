@@ -1,7 +1,7 @@
 from django.shortcuts import render, HttpResponse, redirect
 import requests
 from django.contrib import messages
-from ilusionesMain.forms import FormAlmacen, EditFormAlmacen, FormOrden
+from ilusionesMain.forms import FormAlmacen, EditFormAlmacen, FormOrden, FormRec
 from ilusionesAPI.models import Almacen
 import pandas as pd
 
@@ -169,7 +169,7 @@ def loadCompras(request):
                                     return redirect('subirOrden')
 
                     ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/ordenIn/'
-                    resp = requests.post(ruta, json={'clave':orden,'total':0})
+                    resp = requests.post(ruta, json={'clave':orden,'total':0, 'entregada':False})
 
                     if resp.status_code != 201:
                         messages.success(request, f'No se ha podido guardar la orden principal')
@@ -195,13 +195,14 @@ def loadCompras(request):
 
                     ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/ordenIn/' + orden + '/'
 
-                    resp = requests.put(ruta, json={'clave':orden,'total':suma})
+                    resp = requests.put(ruta, json={'clave':orden,'total':suma, 'entregada':False})
 
                     if resp.status_code != 200:
                         messages.success(request, f'No se ha podido actualizar la orden {orden}')
                         return redirect('subirOrden')
 
                     messages.success(request, f'Se agregraron correctamente las ordenes de compra')
+                    return redirect('ordenes')
 
             else:
                 messages.success(request, f'El archivo no contiene el formato adecuado')
@@ -225,11 +226,117 @@ def getOrdenes(request):
     for orden in resp.json():        
         ordenes.append({
             'clave': orden['clave'],
-            'total': orden['total']
+            'total': orden['total'],
+            'entregada': orden['entregada']
         })
+
+    formulario = FormRec()
         
     return render(request, 'compras/ordenes.html',{
         'title': 'Ordenes generadas',
-        'ordenes': ordenes
+        'ordenes': ordenes,
+        'form': formulario
     })
 
+def loadRec(request, orden):
+    if request.method == 'POST':
+        formulario = FormRec(request.POST, request.FILES)
+
+        if formulario.is_valid():
+            data_form = formulario.cleaned_data
+
+            df = pd.read_excel(request.FILES.get('Archivo_Recepcion'), index_col=0)
+
+            if df.index.name == 'SUBINVENTARIO' and df.columns[0] == 'NOMBRE' and df.columns[1] == 'MODELO' and df.columns[2] == 'IMEI' and df.columns[3] == 'FOLIO':
+
+                almacenes = list(df.index.unique())
+                for almacen in almacenes:
+                    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/almacen/' + almacen + '/'
+                    resp = requests.get(ruta)
+
+                    if resp.status_code != 200:
+                            messages.success(request, f'No se encuentran todos los almacenes regitrados')
+                            return redirect('ordenes')
+
+                repetidos = df[df.duplicated(['IMEI'])]
+
+                if len(repetidos) > 0:
+                     messages.success(request, f'El archivo contiene IMES´s duplicados')
+                else:
+                    dfRec = df[['NOMBRE','FOLIO']].reset_index().drop_duplicates(subset=['SUBINVENTARIO','NOMBRE','FOLIO'])
+                    dfProd = df[['FOLIO','MODELO','IMEI']].reset_index()
+
+                    for x,y in dfRec.iterrows(): 
+                        almacen = y['SUBINVENTARIO']
+                        nombre = y['NOMBRE']
+                        folio = y['FOLIO']
+
+                        ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/recep/'
+                        resp = requests.post(ruta, json={'almacen':almacen,'nombre':nombre,'folio':folio, 'orden':orden})
+
+                        if resp.status_code != 201:
+                            messages.success(request, f'No se ha podido guardar el registro de recepción debido a ya existen folios dados de alta')
+                            return redirect('ordenes')
+                    
+                    modelos = dfProd[['MODELO']].drop_duplicates(subset=['MODELO'])
+                    for x,y in modelos.iterrows(): 
+                        producto = y['MODELO'].replace('.','_')
+
+                        ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/prod/' + producto + '/'
+                        resp = requests.get(ruta)
+
+                        if resp.status_code != 200:
+                                ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/prod/'
+                                resp = requests.post(ruta, json={'sku':producto})
+
+                                if resp.status_code != 201:
+                                    messages.success(request, f'No se ha podido guardar el producto {producto}')
+                                    return redirect('ordenes')
+
+                    for x,y in dfProd.iterrows(): 
+                        imei = y['IMEI']
+                        producto = y['MODELO'].replace('.','_')
+                        folio = y['FOLIO']
+
+                        ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/inven/'
+                        resp = requests.post(ruta, json={'imei':imei,'producto':producto,'folio':folio})
+
+                        if resp.status_code != 201:
+                            messages.success(request, f'No se ha podido guardar el registro del producto, puede que este ya exista alguno con el mismo IMEI')
+                            return redirect('ordenes')
+
+                    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/ordenIn/' + orden + '/'
+
+                    resp = requests.put(ruta, json={'clave':orden, 'entregada':True})
+
+                    if resp.status_code != 200:
+                        messages.success(request, f'No se ha podido actualizar la orden {orden}')
+                        return redirect('ordenes')
+                    
+                    messages.success(request, f'Se ha cargado correctamente el archivo')
+            else:
+                messages.success(request, f'El archivo no contiene el formato adecuado')
+
+        else:
+            ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/ordenIn/'
+
+            resp = requests.get(ruta)
+
+            ordenes = []
+
+            if resp.status_code != 200:
+                return HttpResponse(f"<h2>Se ha generado un error al consultar la API</h2")
+            for orden in resp.json():        
+                ordenes.append({
+                    'clave': orden['clave'],
+                    'total': orden['total'],
+                    'recep': orden['recep']
+                })
+
+            return render(request, 'compras/ordenes.html',{
+                'title': 'Ordenes generadas',
+                'ordenes': ordenes,
+                'form': formulario
+            })
+
+    return redirect('ordenes')

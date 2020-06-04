@@ -267,6 +267,7 @@ nav ul li a:hover{
     font-size: 15px;
     color: gray;
     margin-bottom: 10px;
+    width: 400px;
 }
 
 .btn{
@@ -308,4 +309,5 @@ footer{
     font-size: 15px;
     font-weight: bold;
     font-style: italic;
+    width: 400px;
 }
