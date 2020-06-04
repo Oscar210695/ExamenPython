@@ -14,3 +14,15 @@ class Producto(models.Model):
 
     def __str__(self):
         return self.sku
+
+class Estatus(models.Model):
+    descripción = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.descripción
+
+class ordenCompra(models.Model):
+    almacen = models.ForeignKey(Almacen, on_delete=models.CASCADE)
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    cantidad = models.IntegerField()
+    estatus = models.ForeignKey(Estatus, on_delete=models.CASCADE, default=1)

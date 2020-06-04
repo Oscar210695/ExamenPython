@@ -7,7 +7,7 @@ class FormAlmacen(ModelForm):
     subInventario = forms.CharField(
         max_length=10,
         validators=[validators.MinLengthValidator(10,'El campo Almacen debe tener exactamente 10 caracteres'),
-                    validators.RegexValidator('^[a-zA-Z]{5}[0-9]{5}$', 'La clave esta mal formada')]
+                    validators.RegexValidator('^[a-zA-Z]{5}[0-9]{5}$', 'La clave esta mal formada debe tener la estructura de 5 letras seguida de 5 números')]
     )
 
     class Meta:

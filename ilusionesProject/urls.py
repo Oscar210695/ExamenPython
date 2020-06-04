@@ -19,7 +19,9 @@ from rest_framework import routers
 from ilusionesAPI import views
 
 router = routers.DefaultRouter() 
-router.register(r'posts', views.getAlmacenes, 'ilusionesAPI')  
+router.register(r'almacen', views.getAlmacenes, 'ilusionesAPIAlmacen')  
+router.register(r'prod', views.getProductos, 'ilusionesAPIProd')  
+router.register(r'orden', views.getOrden, 'ilusionesAPIOrden')  
 
 urlpatterns = [
     path('admin/', admin.site.urls),

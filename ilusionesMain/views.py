@@ -3,6 +3,7 @@ import requests
 from django.contrib import messages
 from ilusionesMain.forms import FormAlmacen, EditFormAlmacen
 from ilusionesAPI.models import Almacen
+import pandas as pd
 
 # Create your views here.
 def index(request):
@@ -11,7 +12,7 @@ def index(request):
         })
 
 def getAlmacenes(request):
-    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/posts/'
+    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/almacen/'
 
     resp = requests.get(ruta)
 
@@ -32,7 +33,7 @@ def getAlmacenes(request):
     })
 
 def deleteAlmacen(request, subInventario):
-    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/posts/' + subInventario + '/'
+    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/almacen/' + subInventario + '/'
     resp = requests.delete(ruta)
 
     if resp.status_code != 200 and resp.status_code != 204:
@@ -43,7 +44,7 @@ def deleteAlmacen(request, subInventario):
     return redirect('almacenes')
 
 def getAlmacen(request, subInventario):
-    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/posts/' + subInventario + '/'
+    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/almacen/' + subInventario + '/'
     resp = requests.get(ruta)
 
     if resp.status_code != 200:
@@ -98,7 +99,7 @@ def saveAlmacen(request):
             pdv = data_form['pdv']
             nombre = data_form['nombre']
 
-            ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/posts/'
+            ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/almacen/'
             resp = requests.post(ruta, json={'subInventario':subInventario,'pdv':pdv,'nombre':nombre})
 
             if resp.status_code != 201:
@@ -116,5 +117,72 @@ def saveAlmacen(request):
         'title': f'Crear Almacen',
         'form': formulario,
         'button': 'Guardar'
+    })
+
+def loadCompras(request):
+    if request.method == 'POST':
+        df = pd.read_excel(request.FILES.get('xlsfile'), index_col=0)
+        df = df.sort_index()
+        df = df[:-1]
+        non_null_columns = [col for col in df.columns if df.loc[:, col].notna().any()]
+        df = df[non_null_columns]
+
+        if df.index.name == 'Sub inventario' and df.columns[0] == 'PDV' and df.columns[-1] == 'TOTAL':
+            df = df.loc[df['TOTAL'] > 0]
+            df = df.drop(columns="TOTAL")
+
+            repetidos = df.index.get_level_values('Sub inventario').get_duplicates()
+
+            if len(repetidos) > 0:
+                messages.success(request, f'El archivo contiene inventarios duplicados')
+            else:
+                almacenes = list(df.index.values)
+                for almacen in almacenes:
+                    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/almacen/' + almacen + '/'
+                    resp = requests.get(ruta)
+
+                    if resp.status_code != 200:
+                            messages.success(request, f'No se encuentran todos los almacenes regitrados')
+                            return redirect('subirOrden')
+
+                productos = list(df.columns[1:])
+                
+                for producto in productos:
+                    producto = producto.replace(".", "_")
+
+                    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/prod/' + producto + '/'
+                    resp = requests.get(ruta)
+
+                    if resp.status_code != 200:
+                            ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/prod/'
+                            resp = requests.post(ruta, json={'sku':producto})
+
+                            if resp.status_code != 201:
+                                messages.success(request, f'No se ha podido guardar el producto {producto}')
+                                return redirect('subirOrden')
+
+                df = df.fillna(0).drop(columns="PDV")
+                for i, j in df.iterrows(): 
+                    almacen = i
+                    for column in df.columns:
+                        producto = column.replace('.','_')
+                        cantidad = df[column][i]
+                        if cantidad > 0:
+                            estatus = 1
+
+                            ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/orden/'
+                            resp = requests.post(ruta, json={'almacen':almacen,'producto':producto,'cantidad':cantidad, 'estatus': estatus})
+
+                            if resp.status_code != 201:
+                                messages.success(request, f'No se ha podido guardar la orden')
+                                return redirect('subirOrden')
+
+                messages.success(request, f'Se agregraron correctamente las ordenes de compra')
+
+        else:
+            messages.success(request, f'El archivo no contiene el formato adecuado')
+
+    return render(request, 'compras/loadCompras.html', {
+        'title': f'Cargar Orden de Compra',
     })
 
