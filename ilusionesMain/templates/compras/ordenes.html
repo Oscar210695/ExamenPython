@@ -26,7 +26,7 @@
                 <span class='date'>Se creo esta orden con {{orden.total}} productos</span>
                 <p>
                     {% if  orden.entregada%}
-                        Ya se ha cargado la recepción de mercancia
+                        Ya se ha cargado la recepción de mercancía
                     {% else %}
                         <form action="{% url 'subirRec' orden.clave %}"  method="post" enctype="multipart/form-data" autocomplete='off'>  
                             {% csrf_token %}  

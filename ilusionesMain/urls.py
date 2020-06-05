@@ -11,4 +11,5 @@ urlpatterns = [
     path('subirOrden/', views.loadCompras, name='subirOrden'),
     path('ordenes/', views.getOrdenes, name='ordenes'),
     path('subirRec/<str:orden>', views.loadRec, name='subirRec'),
+    path('inventario/', views.getInventario, name='inventario'),
 ]

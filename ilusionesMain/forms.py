@@ -79,4 +79,7 @@ class FormRec(forms.Form):
         validators=[FileExtensionValidator(allowed_extensions=['xls', 'xlsx'], message='Deben ser archivos de tipo excel')],
         )
 
+class FormInv(forms.Form):
+    IMEI = forms.CharField(label='IMEI', max_length=50, required=False)
+
 

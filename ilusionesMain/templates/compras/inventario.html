@@ -1,0 +1,73 @@
+{% extends 'layout.html' %}
+
+{% block title %}
+    {{title}}
+{% endblock %}
+
+{% block content %}
+
+    <h1 class="title">{{title}}</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class='message'>
+                {{message}}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form action='?page=1' method='POST' autocomplete='off'>
+        {% csrf_token %}
+        
+        {{form}}
+
+        <input type='submit' value='Buscar'/>
+
+    </form>
+
+    </br>
+    <hr/>
+    </br>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+            <th>IMEI</th>
+            <th>Producto</th>
+            <th>Folio</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for modelo in modelos %}
+            <tr>
+                <td>{{ modelo.IMEI }}</td>
+                <td>{{ modelo.Producto }}</td>
+                <td>{{ modelo.Folio }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    </br>
+    <hr/>
+    </br>
+
+    <div class="pagination">
+        <span>
+            {% if modelos.has_previous %}
+                <a href="?page=1">&laquo; Primera</a>
+                <a href="?page={{ modelos.previous_page_number }}">Anterior</a>
+            {% endif %}
+
+            <span class="active">
+                {{ modelos.number }} de {{ modelos.paginator.num_pages }}
+            </span>
+
+            {% if modelos.has_next %}
+                <a href="?page={{ modelos.next_page_number }}">Siguiente</a>
+                <a href="?page={{ modelos.paginator.num_pages }}">Ultima &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+
+{% endblock %}

@@ -1,9 +1,10 @@
 from django.shortcuts import render, HttpResponse, redirect
 import requests
 from django.contrib import messages
-from ilusionesMain.forms import FormAlmacen, EditFormAlmacen, FormOrden, FormRec
+from ilusionesMain.forms import FormAlmacen, EditFormAlmacen, FormOrden, FormRec, FormInv
 from ilusionesAPI.models import Almacen
 import pandas as pd
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 # Create your views here.
 def index(request):
@@ -340,3 +341,59 @@ def loadRec(request, orden):
             })
 
     return redirect('ordenes')
+
+def getInventario(request):
+    formulario = FormInv()
+
+    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/inven/' 
+
+    resp = requests.get(ruta)
+
+    if resp.status_code != 200:
+        return HttpResponse(f"<h2>Se ha generado un error al consultar la API</h2")
+
+    productos = []
+
+    for producto in resp.json():
+        productos.append({
+            'IMEI': producto['imei'],
+            'Producto': producto['producto'],
+            'Folio': producto['folio'],
+        })
+
+    if request.method == 'POST':
+        formulario = FormInv(request.POST)
+
+        if formulario.is_valid():
+            data_form = formulario.cleaned_data
+            imei = data_form['IMEI']
+
+            if imei.strip() != '':
+                ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/inven/' + imei + '/'
+
+                resp = requests.get(ruta)
+
+                if resp.status_code != 200:
+                    messages.success(request, f'No se ha encontrado el IMEI')
+                    return redirect('inventario')
+                
+                productos = []
+                
+                productos.append({'IMEI':resp.json()['imei'], 
+                    'Producto':resp.json()['producto'],
+                    'Folio':resp.json()['folio']
+                })
+
+        else:
+            return redirect('inventario')
+
+    page = Paginator(productos, 10)
+
+    page_number = request.GET.get('page', 1)
+    modelos = page.get_page(page_number)
+    
+    return render(request, 'compras/inventario.html',{
+                'title': 'Inventario',
+                'form': formulario,
+                'modelos': modelos
+            })
