@@ -25,6 +25,7 @@ router.register(r'orden', views.getOrden, 'ilusionesAPIOrden')
 router.register(r'ordenIn', views.getOrdenInd, 'ilusionesAPIOrdenInd')  
 router.register(r'recep', views.getRecep, 'ilusionesAPIRecep')  
 router.register(r'inven', views.getInven, 'ilusionesAPIInven')  
+router.register(r'invAlm', views.getInvAlm, 'ilusionesAPIInvenAlm')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

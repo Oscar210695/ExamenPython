@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework import viewsets          
-from .serializers import serializerClass, serializerClassProd, serializerClassOrden, serializerClassOrdenIn, serializerClassInventario, serializerClassRecep 
+from .serializers import serializerClass, serializerClassProd, serializerClassOrden, serializerClassOrdenIn, serializerClassInventario, serializerClassRecep, serializerClassRecepAlm
 from .models import Almacen, Producto, ordenCompra, Orden, Inventario, Recepcion
 
 # Create your views here.
@@ -25,5 +25,11 @@ class getInven(viewsets.ModelViewSet):
   queryset = Inventario.objects.all()  
 
 class getRecep(viewsets.ModelViewSet):       
-  serializer_class = serializerClassRecep          
+  serializer_class = serializerClassRecep      
   queryset = Recepcion.objects.all() 
+
+class getInvAlm(viewsets.ModelViewSet): 
+  queryset = Recepcion.objects.all()      
+  serializer_class = serializerClassRecepAlm 
+  model = Recepcion
+  filter_fields = ('almacen', ) 

@@ -12,4 +12,5 @@ urlpatterns = [
     path('ordenes/', views.getOrdenes, name='ordenes'),
     path('subirRec/<str:orden>', views.loadRec, name='subirRec'),
     path('inventario/', views.getInventario, name='inventario'),
+    path('obtenerInventario/<str:subInventario>', views.getInventarioAlmacen, name='obtenerInventario'),
 ]

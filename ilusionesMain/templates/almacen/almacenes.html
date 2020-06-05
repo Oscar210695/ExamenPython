@@ -25,6 +25,9 @@
                 <h2>
                     <a class='edit' href="{% url 'actualizarAlmacen' almacen.subInventario %}">{{almacen.nombre}}</a>
                 </h2>
+                <h3>
+                    <a href="{% url 'obtenerInventario' almacen.subInventario %}">Inventario</a>
+                <h3>
                 <span class='date'>{{almacen.subInventario}}</span>
                 <p>
                     {{almacen.pdv}}

@@ -397,3 +397,59 @@ def getInventario(request):
                 'form': formulario,
                 'modelos': modelos
             })
+
+def getInventarioAlmacen(request, subInventario):
+    formulario = FormInv()
+
+    ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/invAlm/'
+    resp = requests.get(ruta)
+
+    if resp.status_code != 200:
+            messages.success(request, f'No se ha podido encontrar la información')
+            return redirect('almacenes')
+
+    productos = []
+
+    for almacen in resp.json():
+        if almacen['almacen'] == subInventario:
+            for items in almacen['productos']:
+                productos.append({
+                    'IMEI': items['imei'],
+                    'Producto': items['producto'],
+                    'Folio': items['folio'],
+                })
+            continue
+
+    if request.method == 'POST':
+        formulario = FormInv(request.POST)
+
+        if formulario.is_valid():
+            data_form = formulario.cleaned_data
+            imei = data_form['IMEI']
+
+            if imei.strip() != '':
+                ruta = 'http://' + request.META.get('HTTP_HOST') + '/api/inven/' + imei + '/'
+
+                resp = requests.get(ruta)
+
+                if resp.status_code != 200:
+                    messages.success(request, f'No se ha encontrado el IMEI')
+                    return redirect('obtenerInventario', subInventario)
+                
+                productos = []
+                
+                productos.append({'IMEI':resp.json()['imei'], 
+                    'Producto':resp.json()['producto'],
+                    'Folio':resp.json()['folio']
+                })
+
+    page = Paginator(productos, 10)
+
+    page_number = request.GET.get('page', 1)
+    modelos = page.get_page(page_number)
+    
+    return render(request, 'compras/inventario.html',{
+                'title': f'Inventario del almacen <i>{subInventario}</i>',
+                'form': formulario,
+                'modelos': modelos
+            })

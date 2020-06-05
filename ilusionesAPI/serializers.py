@@ -26,7 +26,19 @@ class serializerClassInventario(serializers.ModelSerializer):
     model = Inventario
     fields = ('imei', 'producto', 'folio')
 
+class serializerClassInven(serializers.ModelSerializer):
+  class Meta:
+    model = Inventario
+    fields = ('imei', 'producto','folio')
+
 class serializerClassRecep(serializers.ModelSerializer):
   class Meta:
     model = Recepcion
     fields = ('almacen', 'nombre', 'folio', 'orden')
+
+class serializerClassRecepAlm(serializers.ModelSerializer):
+  productos = serializerClassInven(many=True)
+
+  class Meta:
+    model = Recepcion
+    fields = ('almacen','productos')

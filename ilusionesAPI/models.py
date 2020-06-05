@@ -47,7 +47,7 @@ class ordenCompra(models.Model):
 
 class Recepcion(models.Model):
     folio = models.CharField(primary_key=True, unique=True, max_length=100)
-    almacen = models.ForeignKey(Almacen, on_delete=models.CASCADE)
+    almacen = models.ForeignKey(Almacen, on_delete=models.CASCADE, related_name='almacenes')
     nombre = models.CharField(max_length=100)
     orden = models.ForeignKey(Orden, on_delete=models.CASCADE, default='null')
 
@@ -57,7 +57,7 @@ class Recepcion(models.Model):
 class Inventario(models.Model):
     imei = models.CharField(primary_key=True, unique=True, max_length=50)
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
-    folio = models.ForeignKey(Recepcion, on_delete=models.CASCADE)
+    folio = models.ForeignKey(Recepcion, on_delete=models.CASCADE, related_name='productos')
 
     def __str__(self):
         return self.imei
